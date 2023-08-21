@@ -1,0 +1,75 @@
+
+import RPi.GPIO as GPIO
+import dht11
+# import bmp085
+from datetime import datetime
+from time import sleep
+import csv
+import os.path
+
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+GPIO.cleanup()
+
+# mydht = dht11.DHT11(pin=7)
+# rain=InputDevice(13)
+# bmp180sensor=bmp085.bmp085()
+
+
+
+#global variables
+datafile = "C:\Users\Anusha\OneDrive\Documents\VI SEM\IoT lab\IoT Mini project\sensor_values.csv"
+
+#main function - will take temp, humidity and timestamp and write to csv every 10s
+def main():
+    while True:
+        print("Beginning cycle ")
+        data_th = get_data()
+        add_to_file(data_th,datafile)
+        sleep(60)
+        print("End of cycle ")
+
+#get temp and humidity and add to 'data' dictionary
+def get_data():
+    global data_th
+    now = datetime.now()
+    mydht=dht11.DHT11(pin=7)
+    result_th = mydht.read()
+    if result_th.is_valid():
+        t=result_th.temperature
+        h=result_th.humidity
+        data_th = {'timestamp':str(now.strftime("%Y/%m/%d_%H-%M-%S")), 'temperature-C':t,'temperature-F':((9/5)*t+32),'humidity':h}
+        
+    return data_th
+    # pressure=round(bmp180sensor.read_pressure()/100, 1)
+    # data_pr={'pressure':pressure}
+    # if not rain.is_active():
+    #     op=1
+    #     data_rn={'status':op}
+    # else:
+    #     op=0
+    #     data_rn={'status':op}
+    # return data_th,data_pr,data_rn
+
+#write temp, humidity and time stamps to csv file
+def add_to_file(data_th,datafile):
+    if os.path.isfile(datafile): #checks if file exists. if yes, appends values for dictionary keys under corresponding header in a new line
+        with open(datafile, 'a', newline='') as csvfile: 
+            fieldnames = ['Time', 'Temperature-C','Temperature-F','Humidity']#,'Pressure','Dripping Staus']
+            data_writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+            data_writer.writerow({'Time': data_th['timestamp'], 'Temperature-C': data_th['temperature-C'],'Temperature-F': data_th['temperature-F'], 'Humidity': data_th['humidity']})#, 'Pressure':data2['pressure'], 'Dripping status':data3['status']})
+    
+    else: #creates file (that has been checked and does not yet exist) and adds headers and values for all 3 keys in dict
+        with open(datafile, 'w', newline='') as csvfile: 
+            fieldnames = ['Time', 'Temperature-C','Temperature-F','Humidity','Pressure','Dripping Staus']
+            data_writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+            data_writer.writeheader()
+            data_writer.writerow({'Time': data1['timestamp'], 'Temperature-C': data1['temperature-C'],'Temperature-F': data1['temperature-F'], 'Humidity': data1['humidity']})# 'Pressure':data2['pressure'], 'Dripping status':data3['status']})
+    
+
+if __name__ == "__main__":
+    main()
+
